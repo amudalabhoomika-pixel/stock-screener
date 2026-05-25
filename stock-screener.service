@@ -1,0 +1,51 @@
+# Stock Screener - systemd Service Template
+# 
+# Installation:
+# 1. Edit USER and WorkingDirectory paths if needed
+# 2. Copy to: sudo cp stock-screener.service /etc/systemd/system/
+# 3. Enable: sudo systemctl enable stock-screener
+# 4. Start: sudo systemctl start stock-screener
+# 5. Status: sudo systemctl status stock-screener
+#
+# Management:
+#   sudo systemctl start stock-screener
+#   sudo systemctl stop stock-screener
+#   sudo systemctl restart stock-screener
+#   sudo systemctl status stock-screener
+#   journalctl -u stock-screener -f  (view logs)
+
+[Unit]
+Description=Stock Screener - Automated Stock Analysis with Telegram Alerts
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/stock-screener
+
+# Use virtual environment Python
+ExecStart=/home/ubuntu/stock-screener/venv/bin/python3 app.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stock-screener
+
+# Resource limits (adjust as needed)
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment
+Environment="PATH=/home/ubuntu/stock-screener/venv/bin"
+EnvironmentFile=/home/ubuntu/stock-screener/.env
+
+[Install]
+WantedBy=multi-user.target
