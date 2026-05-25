@@ -155,6 +155,17 @@
   }
   .scan-btn:disabled::before { display: none; }
 
+  .force-btn {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+
+  .force-btn::before {
+    background: var(--yellow);
+  }
+
+  .force-btn:hover::before { opacity: 0.1; }
+
   /* ── Stats bar ─────────────────────────────────────── */
   .stats-bar {
     display: flex;
@@ -477,7 +488,8 @@
         <button class="market-btn active" id="btn-nse" onclick="selectMarket('NSE')">🇮🇳 NSE</button>
         <button class="market-btn" id="btn-nyse" onclick="selectMarket('NYSE')">🇺🇸 NYSE</button>
       </div>
-      <button class="scan-btn" id="scanBtn" onclick="triggerScan()">⟳ Scan</button>
+      <button class="scan-btn" id="scanBtn" onclick="triggerScan(false)">⟳ Scan</button>
+      <button class="scan-btn force-btn" id="forceBtn" onclick="triggerScan(true)" title="Skip cache and force rescan">⚡ Force</button>
     </div>
   </header>
 
@@ -725,15 +737,17 @@ function startPolling() {
 }
 
 // ── Trigger scan ─────────────────────────────────────────────────────────────
-async function triggerScan() {
+async function triggerScan(force = false) {
   if (scanning) return;
   scanning = true;
   document.getElementById('scanBtn').disabled = true;
+  document.getElementById('forceBtn').disabled = true;
   setStatus('scanning', `Initiating scan for ${currentMarket}…`);
   setProgress(2);
 
   try {
-    const res  = await fetch(`/api/scan?market=${currentMarket}`);
+    const url = `/api/scan?market=${currentMarket}${force ? '&force=true' : ''}`;
+    const res  = await fetch(url);
     const data = await res.json();
 
     if (res.status === 200) {
@@ -743,6 +757,7 @@ async function triggerScan() {
       renderResults(data);
       scanning = false;
       document.getElementById('scanBtn').disabled = false;
+      document.getElementById('forceBtn').disabled = false;
       startCountdown();
     } else if (res.status === 202) {
       setStatus('scanning', `Scanning ${currentMarket}… 0%`);
@@ -755,12 +770,14 @@ async function triggerScan() {
       setProgress(0);
       scanning = false;
       document.getElementById('scanBtn').disabled = false;
+      document.getElementById('forceBtn').disabled = false;
     }
   } catch (e) {
     setStatus('error', 'Network error — is the server running?');
     setProgress(0);
     scanning = false;
     document.getElementById('scanBtn').disabled = false;
+    document.getElementById('forceBtn').disabled = false;
   }
 }
 

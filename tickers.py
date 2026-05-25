@@ -109,8 +109,9 @@ NYSE_TICKERS = [
     "LEN", "DHI", "PHM", "TOL", "MDC", "MTH", "MHO", "LGIH", "BZH", "HOV",
     "SHW", "PPG", "RPM", "FUL", "AXTA", "HXL", "TRS", "ARES", "CW", "CRS",
     "IP", "PKG", "SEE", "SON", "GEF", "CLW", "KS", "ATR", "BERY", "SLGN",
-    "CB", "HIG", "WRB", "RE", "MKL", "CINF", "SFG", "HMN", "FGL", "UNM",
-    "BX", "KKR", "APO", "CG", "ARES", "OWL", "FIG", "BLUE", "GAIN", "MAIN",
+    "CB", "HIG", "WRB", "MKL", "CINF", "HMN", "UNM", "GEV", "VST", "PCG",
+    "BX", "KKR", "APO", "CG", "ARES", "OWL", "GAIN", "MAIN", "CEG", "ETR",
+    "FE", "AES", "NRG", "URI", "RSG", "WM",
 ]
 
 # Remove duplicates

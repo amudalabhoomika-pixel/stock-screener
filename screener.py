@@ -12,9 +12,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 # ── Configurable constants ────────────────────────────────────────────────────
-PE_MAX            = 20.0
-VOLUME_SPIKE_MIN  = 2.0   # must be > 2× 20-day avg volume
-RSI_MIN           = 50.0
+PE_MAX            = 25.0
+VOLUME_SPIKE_MIN  = 1.5   # must be > 1.5× 20-day avg volume
+RSI_MIN           = 45.0
 RSI_PERIOD        = 14
 TOP_N             = 10
 BATCH_SIZE        = 20    # tickers per yfinance bulk download

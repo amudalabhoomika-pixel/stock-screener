@@ -65,14 +65,17 @@ def index():
 @app.route("/api/scan")
 def api_scan():
     market = request.args.get("market", "NSE").upper()
+    force = request.args.get("force", "false").lower() == "true"
+    
     if market not in ("NSE", "NYSE"):
         return jsonify({"error": "market must be NSE or NYSE"}), 400
 
-    # Return cached result if fresh
-    cached = _cache.get(market)
-    if cached and (time.time() - cached["completed_at"]) < CACHE_TTL:
-        log.info(f"Returning cached result for {market}")
-        return jsonify({"cached": True, **cached["result"]})
+    # Return cached result if fresh and not forced
+    if not force:
+        cached = _cache.get(market)
+        if cached and (time.time() - cached["completed_at"]) < CACHE_TTL:
+            log.info(f"Returning cached result for {market}")
+            return jsonify({"cached": True, **cached["result"]})
 
     # If already scanning the same market, return status
     with _scan_lock:
