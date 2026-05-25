@@ -1,0 +1,28 @@
+# Virtual environments
+venv/
+env/
+*.pyc
+__pycache__/
+.Python
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env.local
+.env.*.local
+
+# Cache
+.cache/
+*.egg-info/
+dist/
+build/
+

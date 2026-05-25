@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Stock Screener — Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Design tokens ─────────────────────────────────── */
+  :root {
+    --bg:         #080c12;
+    --surface:    #0d1420;
+    --surface2:   #111927;
+    --border:     #1e2d42;
+    --accent:     #00e5ff;
+    --accent2:    #7b61ff;
+    --green:      #00e676;
+    --yellow:     #ffea00;
+    --red:        #ff1744;
+    --text:       #e2eaf5;
+    --muted:      #4a6080;
+    --mono:       'Space Mono', monospace;
+    --sans:       'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ───────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+  /* ── Header ────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 0 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -1px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--muted);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* ── Market toggle ─────────────────────────────────── */
+  .market-toggle {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .market-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .market-btn.active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .market-btn:hover:not(.active) {
+    color: var(--text);
+    background: var(--surface2);
+  }
+
+  /* ── Scan button ───────────────────────────────────── */
+  .scan-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scan-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .scan-btn:hover::before { opacity: 0.1; }
+  .scan-btn:active { transform: scale(0.97); }
+  .scan-btn:disabled {
+    border-color: var(--muted);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .scan-btn:disabled::before { display: none; }
+
+  /* ── Stats bar ─────────────────────────────────────── */
+  .stats-bar {
+    display: flex;
+    gap: 32px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .stat-value.flash { color: var(--accent); }
+
+  /* ── Progress bar ──────────────────────────────────── */
+  .progress-wrap {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin: 16px 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .progress-wrap.visible { opacity: 1; }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ── Status line ───────────────────────────────────── */
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 4px;
+    min-height: 30px;
+  }
+
+  .pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .pulse.scanning {
+    background: var(--accent);
+    animation: pulseAnim 1s infinite;
+  }
+
+  .pulse.ready { background: var(--green); }
+  .pulse.error { background: var(--red); }
+
+  @keyframes pulseAnim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .status-text {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+  }
+
+  .refresh-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── Table ─────────────────────────────────────────── */
+  .table-wrap {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    padding: 14px 20px;
+    text-align: left;
+  }
+
+  thead th.right { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    animation: rowIn 0.4s ease both;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:nth-child(1)  { animation-delay: 0.00s; }
+  tbody tr:nth-child(2)  { animation-delay: 0.04s; }
+  tbody tr:nth-child(3)  { animation-delay: 0.08s; }
+  tbody tr:nth-child(4)  { animation-delay: 0.12s; }
+  tbody tr:nth-child(5)  { animation-delay: 0.16s; }
+  tbody tr:nth-child(6)  { animation-delay: 0.20s; }
+  tbody tr:nth-child(7)  { animation-delay: 0.24s; }
+  tbody tr:nth-child(8)  { animation-delay: 0.28s; }
+  tbody tr:nth-child(9)  { animation-delay: 0.32s; }
+  tbody tr:nth-child(10) { animation-delay: 0.36s; }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td {
+    padding: 16px 20px;
+    font-size: 14px;
+  }
+
+  td.right { text-align: right; }
+
+  /* rank */
+  .rank-cell {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  /* ticker */
+  .ticker-cell {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  .ticker-cell .exchange-tag {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 5px;
+    letter-spacing: 1px;
+  }
+
+  /* price */
+  .price-cell {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* PE */
+  .pe-cell { font-family: var(--mono); font-size: 13px; }
+  .pe-low  { color: var(--green); }
+  .pe-mid  { color: var(--yellow); }
+  .pe-high { color: var(--text); }
+
+  /* vol ratio */
+  .vol-cell { font-family: var(--mono); font-size: 13px; }
+  .vol-high { color: var(--accent); }
+  .vol-mid  { color: var(--yellow); }
+
+  /* RSI */
+  .rsi-cell { font-family: var(--mono); font-size: 13px; }
+  .rsi-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rsi-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 60px;
+  }
+  .rsi-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--green));
+  }
+
+  /* score */
+  .score-cell {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .score-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .score-a { background: rgba(0,230,118,0.12); color: var(--green); }
+  .score-b { background: rgba(0,229,255,0.10); color: var(--accent); }
+  .score-c { background: rgba(123,97,255,0.12); color: var(--accent2); }
+
+  /* ── Empty / loading state ─────────────────────────── */
+  .empty-state {
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty-state .big-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── Filter legend ─────────────────────────────────── */
+  .filter-legend {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+
+  .filter-chip .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ── Countdown ring ────────────────────────────────── */
+  .countdown-ring {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .countdown-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 2.5; }
+  .ring-fg { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+  /* ── Responsive ────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .stats-bar { gap: 20px; }
+    thead th, tbody td { padding: 12px 10px; font-size: 12px; }
+    .ticker-cell { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="logo-mark">▸ SCREENER</span>
+      <span class="logo-sub">Live · Top 10</span>
+    </div>
+    <div class="header-right">
+      <div class="market-toggle">
+        <button class="market-btn active" id="btn-nse" onclick="selectMarket('NSE')">🇮🇳 NSE</button>
+        <button class="market-btn" id="btn-nyse" onclick="selectMarket('NYSE')">🇺🇸 NYSE</button>
+      </div>
+      <button class="scan-btn" id="scanBtn" onclick="triggerScan()">⟳ Scan</button>
+    </div>
+  </header>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-label">Market</span>
+      <span class="stat-value" id="statMarket">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Scanned</span>
+      <span class="stat-value" id="statScanned">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Passed Filters</span>
+      <span class="stat-value" id="statPassed">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Last Updated</span>
+      <span class="stat-value" id="statTime" style="font-size:13px">—</span>
+    </div>
+    <div class="stat" style="margin-left:auto; align-items:flex-end;">
+      <span class="stat-label">Next Refresh</span>
+      <div class="countdown-ring" id="countdownRing">
+        <svg width="22" height="22" viewBox="0 0 22 22">
+          <circle class="ring-bg" cx="11" cy="11" r="8"/>
+          <circle class="ring-fg" id="ringFg" cx="11" cy="11" r="8"
+            stroke-dasharray="50.27" stroke-dashoffset="50.27"/>
+        </svg>
+        <span id="countdownSec">—</span>s
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-line">
+    <div class="pulse" id="statusPulse"></div>
+    <span class="status-text" id="statusText">Select a market and click Scan</span>
+    <span class="refresh-badge" id="refreshBadge"></span>
+  </div>
+
+  <!-- Filter legend -->
+  <div class="filter-legend">
+    <div class="filter-chip"><span class="dot"></span>P/E &lt; 20</div>
+    <div class="filter-chip"><span class="dot" style="background:var(--accent2)"></span>Volume &gt; 2× 20-day avg</div>
+    <div class="filter-chip"><span class="dot" style="background:var(--green)"></span>RSI(14) &gt; 50</div>
+    <div class="filter-chip"><span class="dot" style="background:var(--yellow)"></span>Composite ranked</div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" style="margin-top:20px">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Ticker</th>
+          <th class="right">Price</th>
+          <th class="right">P/E</th>
+          <th class="right">Vol Ratio</th>
+          <th>RSI (14)</th>
+          <th class="right">Score</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody">
+        <tr><td colspan="7">
+          <div class="empty-state">
+            <div class="big-icon">◈</div>
+            <p>No data yet.<br>Select a market and click <strong>Scan</strong> to begin.</p>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let currentMarket   = 'NSE';
+let scanning        = false;
+let refreshInterval = null;
+let countdownTimer  = null;
+let secondsLeft     = 60;
+const REFRESH_SEC   = 60;
+const POLL_MS       = 2000;  // poll /api/status every 2s while scanning
+let pollTimer       = null;
+
+// ── Market selection ─────────────────────────────────────────────────────────
+function selectMarket(market) {
+  currentMarket = market;
+  document.getElementById('btn-nse').classList.toggle('active',  market === 'NSE');
+  document.getElementById('btn-nyse').classList.toggle('active', market === 'NYSE');
+}
+
+// ── Countdown ring ───────────────────────────────────────────────────────────
+const CIRC = 50.27; // 2π × r(8)
+
+function startCountdown() {
+  clearInterval(countdownTimer);
+  secondsLeft = REFRESH_SEC;
+  updateRing();
+  countdownTimer = setInterval(() => {
+    secondsLeft--;
+    if (secondsLeft <= 0) secondsLeft = REFRESH_SEC;
+    updateRing();
+  }, 1000);
+}
+
+function updateRing() {
+  const pct    = secondsLeft / REFRESH_SEC;
+  const offset = CIRC * (1 - pct);
+  document.getElementById('ringFg').style.strokeDashoffset = offset;
+  document.getElementById('countdownSec').textContent = secondsLeft;
+}
+
+// ── Status helpers ───────────────────────────────────────────────────────────
+function setStatus(type, msg) {
+  const pulse = document.getElementById('statusPulse');
+  pulse.className = 'pulse ' + type;
+  document.getElementById('statusText').textContent = msg;
+}
+
+function setProgress(pct) {
+  const wrap = document.getElementById('progressWrap');
+  const bar  = document.getElementById('progressBar');
+  if (pct > 0 && pct < 100) {
+    wrap.classList.add('visible');
+    bar.style.width = pct + '%';
+  } else {
+    wrap.classList.remove('visible');
+    bar.style.width = '0%';
+  }
+}
+
+// ── Flash helper ─────────────────────────────────────────────────────────────
+function flashStat(id) {
+  const el = document.getElementById(id);
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 600);
+}
+
+// ── Render results ───────────────────────────────────────────────────────────
+function renderResults(data) {
+  const currency = data.market === 'NSE' ? '₹' : '$';
+
+  document.getElementById('statMarket').textContent  = data.market;
+  document.getElementById('statScanned').textContent = data.scanned ?? '—';
+  document.getElementById('statPassed').textContent  = data.passed_filter ?? '—';
+
+  const ts = data.timestamp ? new Date(data.timestamp) : null;
+  document.getElementById('statTime').textContent =
+    ts ? ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '—';
+
+  ['statMarket','statScanned','statPassed','statTime'].forEach(flashStat);
+
+  const tbody = document.getElementById('resultsBody');
+
+  if (!data.results || data.results.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-state">
+        <div class="big-icon">◉</div>
+        <p>No stocks matched all filters for <strong>${data.market}</strong>.<br>
+        Try again during market hours.</p>
+      </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.results.map(r => {
+    // P/E colour
+    const peClass = r.pe < 10 ? 'pe-low' : r.pe < 15 ? 'pe-mid' : 'pe-high';
+
+    // Vol colour
+    const volClass = r.vol_ratio >= 4 ? 'vol-high' : 'vol-mid';
+
+    // RSI bar
+    const rsiFill = Math.min(100, Math.max(0, r.rsi));
+
+    // Score badge
+    const scoreClass = r.score > 0.66 ? 'score-a' : r.score > 0.40 ? 'score-b' : 'score-c';
+    const scorePct   = (r.score * 100).toFixed(1);
+
+    // Clean ticker display
+    const display = r.ticker.replace('.NS', '');
+
+    return `<tr>
+      <td class="rank-cell">${String(r.rank).padStart(2,'0')}</td>
+      <td class="ticker-cell">
+        ${display}
+        <span class="exchange-tag">${data.market}</span>
+      </td>
+      <td class="price-cell right">${currency}${r.price.toLocaleString()}</td>
+      <td class="pe-cell right ${peClass}">${r.pe.toFixed(2)}</td>
+      <td class="vol-cell right ${volClass}">${r.vol_ratio.toFixed(2)}×</td>
+      <td>
+        <div class="rsi-bar-wrap">
+          <span class="rsi-cell">${r.rsi.toFixed(1)}</span>
+          <div class="rsi-bar-bg">
+            <div class="rsi-bar-fill" style="width:${rsiFill}%"></div>
+          </div>
+        </div>
+      </td>
+      <td class="score-cell right">
+        <span class="score-badge ${scoreClass}">${scorePct}%</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Polling while scan in progress ──────────────────────────────────────────
+function startPolling() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch('/api/status');
+      const data = await res.json();
+
+      if (data.status === 'scanning') {
+        setProgress(data.progress || 0);
+        setStatus('scanning', `Scanning ${data.market}… ${data.progress || 0}%`);
+      } else if (data.status === 'ready') {
+        clearInterval(pollTimer);
+        scanning = false;
+        setProgress(100);
+        setStatus('ready', `Scan complete — ${data.passed_filter} stocks matched`);
+        setTimeout(() => setProgress(0), 800);
+        renderResults(data);
+        document.getElementById('scanBtn').disabled = false;
+        startCountdown();
+      } else if (data.status === 'error') {
+        clearInterval(pollTimer);
+        scanning = false;
+        setStatus('error', 'Scan failed: ' + data.error);
+        setProgress(0);
+        document.getElementById('scanBtn').disabled = false;
+      }
+    } catch (e) {
+      console.warn('Poll error:', e);
+    }
+  }, POLL_MS);
+}
+
+// ── Trigger scan ─────────────────────────────────────────────────────────────
+async function triggerScan() {
+  if (scanning) return;
+  scanning = true;
+  document.getElementById('scanBtn').disabled = true;
+  setStatus('scanning', `Initiating scan for ${currentMarket}…`);
+  setProgress(2);
+
+  try {
+    const res  = await fetch(`/api/scan?market=${currentMarket}`);
+    const data = await res.json();
+
+    if (res.status === 200) {
+      // Came from cache — instant result
+      setStatus('ready', `Cached result — ${data.passed_filter} stocks matched`);
+      setProgress(0);
+      renderResults(data);
+      scanning = false;
+      document.getElementById('scanBtn').disabled = false;
+      startCountdown();
+    } else if (res.status === 202) {
+      setStatus('scanning', `Scanning ${currentMarket}… 0%`);
+      startPolling();
+    } else if (res.status === 429) {
+      setStatus('scanning', data.error || 'Another scan in progress…');
+      startPolling();
+    } else {
+      setStatus('error', data.error || 'Unknown error');
+      setProgress(0);
+      scanning = false;
+      document.getElementById('scanBtn').disabled = false;
+    }
+  } catch (e) {
+    setStatus('error', 'Network error — is the server running?');
+    setProgress(0);
+    scanning = false;
+    document.getElementById('scanBtn').disabled = false;
+  }
+}
+
+// ── Auto-refresh every 60s ───────────────────────────────────────────────────
+function startAutoRefresh() {
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    if (!scanning) {
+      document.getElementById('refreshBadge').textContent = 'auto-refresh ↻';
+      setTimeout(() => {
+        document.getElementById('refreshBadge').textContent = '';
+      }, 2000);
+      triggerScan();
+    }
+  }, REFRESH_SEC * 1000);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+startCountdown();
+startAutoRefresh();
+updateRing();
+</script>
+</body>
+</html>
