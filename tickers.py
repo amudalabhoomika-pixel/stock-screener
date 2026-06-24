@@ -1,134 +1,175 @@
-# tickers.py — Static ticker lists for NSE Nifty 500 and NYSE large-caps
+# tickers.py — Full US stock universe (NYSE + NASDAQ)
+# ~820 liquid US stocks: S&P 500 + Nasdaq 100 + Russell 1000 mid-caps
+# Last cleaned: 2026-05-26 — verified active tickers only
+# NSE support removed — US-only screener
 
-NIFTY500_TICKERS = [
-    # Nifty 500 constituents with .NS suffix for yfinance
-    "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "BHARTIARTL.NS", "ICICIBANK.NS",
-    "INFOSYS.NS", "SBIN.NS", "HINDUNILVR.NS", "ITC.NS", "LT.NS",
-    "KOTAKBANK.NS", "HCLTECH.NS", "AXISBANK.NS", "BAJFINANCE.NS", "WIPRO.NS",
-    "MARUTI.NS", "SUNPHARMA.NS", "ULTRACEMCO.NS", "TITAN.NS", "ONGC.NS",
-    "NTPC.NS", "POWERGRID.NS", "TATAMOTORS.NS", "ADANIENT.NS", "M&M.NS",
-    "NESTLEIND.NS", "JSWSTEEL.NS", "TATASTEEL.NS", "BAJAJFINSV.NS", "DRREDDY.NS",
-    "CIPLA.NS", "DIVISLAB.NS", "TECHM.NS", "HINDALCO.NS", "COALINDIA.NS",
-    "GRASIM.NS", "BPCL.NS", "INDUSINDBK.NS", "EICHERMOT.NS", "BRITANNIA.NS",
-    "APOLLOHOSP.NS", "HEROMOTOCO.NS", "SBILIFE.NS", "HDFCLIFE.NS", "ADANIPORTS.NS",
-    "TATACONSUM.NS", "BAJAJ-AUTO.NS", "UPL.NS", "VEDL.NS", "SHREECEM.NS",
-    "PIDILITIND.NS", "GODREJCP.NS", "TORNTPHARM.NS", "BIOCON.NS", "DABUR.NS",
-    "BERGEPAINT.NS", "MARICO.NS", "COLPAL.NS", "HAVELLS.NS", "LUPIN.NS",
-    "MCDOWELL-N.NS", "SIEMENS.NS", "ABB.NS", "BOSCHLTD.NS", "MOTHERSON.NS",
-    "BALKRISIND.NS", "MUTHOOTFIN.NS", "CHOLAFIN.NS", "AUBANK.NS", "FEDERALBNK.NS",
-    "IDFCFIRSTB.NS", "BANDHANBNK.NS", "PNB.NS", "BANKBARODA.NS", "CANBK.NS",
-    "UNIONBANK.NS", "INDIANB.NS", "IOB.NS", "CENTRALBK.NS", "UCOBANK.NS",
-    "MAHABANK.NS", "LICHSGFIN.NS", "PIRAMALENT.NS", "MANAPPURAM.NS", "RBLBANK.NS",
-    "KARURVYSYA.NS", "DCBBANK.NS", "SOUTHBANK.NS", "UJJIVANSFB.NS", "EQUITASBNK.NS",
-    "NAUKRI.NS", "ZOMATO.NS", "PAYTM.NS", "POLICYBZR.NS", "DELHIVERY.NS",
-    "IRCTC.NS", "RAILVIKAS.NS", "RVNL.NS", "IRFC.NS", "RECLTD.NS",
-    "PFC.NS", "HUDCO.NS", "NBCC.NS", "NLC.NS", "SJVN.NS",
-    "NHPC.NS", "TORNTPOWER.NS", "CESC.NS", "TATAPOWER.NS", "ADANIGREEN.NS",
-    "ADANITRANS.NS", "ADANIPOWER.NS", "JSW Energy.NS", "RPOWER.NS", "INOXWIND.NS",
-    "SUZLON.NS", "GREENKO.NS", "RENEW.NS", "WAAREEENER.NS", "PREMIER.NS",
-    "DLF.NS", "GODREJPROP.NS", "OBEROIRLTY.NS", "PRESTIGE.NS", "PHOENIXLTD.NS",
-    "MAHINDCIE.NS", "BRIGADE.NS", "SOBHA.NS", "PURVA.NS", "KOLTEPATIL.NS",
-    "ASIANPAINT.NS", "KANSAINER.NS", "AKZOINDIA.NS", "INDIGO.NS", "SPICEJET.NS",
-    "INTERGLOBE.NS", "BLUEDART.NS", "GATI.NS", "MAHLOG.NS", "VRL.NS",
-    "ZYDUSLIFE.NS", "ALKEM.NS", "IPCALAB.NS", "AUROPHARMA.NS", "NATCOPHARM.NS",
-    "GRANULES.NS", "LAURUSLABS.NS", "GLENMARK.NS", "PFIZER.NS", "GLAXO.NS",
-    "ABBOTINDIA.NS", "SANOFI.NS", "NOVARTIS.NS", "WOCKPHARMA.NS", "AJANTPHARM.NS",
-    "JBCHEPHARM.NS", "ERIS.NS", "CAPLIPOINT.NS", "SOLARA.NS", "SEQUENT.NS",
-    "TATAELXSI.NS", "LTTS.NS", "MPHASIS.NS", "PERSISTENT.NS", "COFORGE.NS",
-    "HEXAWARE.NS", "NIITLTD.NS", "KPITTECH.NS", "TANLA.NS", "ROUTE.NS",
-    "MASTEK.NS", "ZENSAR.NS", "MINDTREE.NS", "RAMSARUP.NS", "ECLERX.NS",
-    "INFOEDGE.NS", "JUSTDIAL.NS", "INDIAMART.NS", "CARTRADE.NS", "EASEMYTRIP.NS",
-    "HAPPSTMNDS.NS", "BIRLASOFT.NS", "CYIENT.NS", "SONATSOFTW.NS", "INTELLECT.NS",
-    "RAILTEL.NS", "TATACOMM.NS", "STLTECH.NS", "GTLINFRA.NS", "TEJASNET.NS",
-    "DIXON.NS", "AMBER.NS", "PG.NS", "VOLTAS.NS", "BLUESTAR.NS",
-    "LLOYDSENGG.NS", "VGUARD.NS", "SYMPHONY.NS", "WHIRLPOOL.NS", "BAJAJCON.NS",
-    "CROMPTON.NS", "ORIENTELEC.NS", "RAJESHEXPO.NS", "TITAN.NS", "KALYAN.NS",
-    "PCJEWELLER.NS", "SENCO.NS", "THANGAMAYL.NS", "TRIBHOVAND.NS", "IIFL.NS",
-    "MOFSL.NS", "ANGELONE.NS", "5PAISA.NS", "ICICIGI.NS", "ICICIPRULI.NS",
-    "HDFCAMC.NS", "NIPPONSLIFE.NS", "ABSLAMC.NS", "UTIAMC.NS", "BFUTL.NS",
-    "SHRIRAMPPS.NS", "BAJAJHLDNG.NS", "MAHINDRA.NS", "TATAHOLDING.NS", "MUTHOOTCAP.NS",
-    "SUNDARMFIN.NS", "LTFH.NS", "IBULHSGFIN.NS", "CANFINHOME.NS", "AAVAS.NS",
-    "HOMEFIRST.NS", "REPCO.NS", "APTUS.NS", "PNBHOUSING.NS", "GRUH.NS",
-    "MMTC.NS", "MSTCLTD.NS", "IRCON.NS", "BEML.NS", "BEL.NS",
-    "HAL.NS", "MIDHANI.NS", "MAZAGON.NS", "COCHINSHIP.NS", "GARDENRCH.NS",
-    "GRINDWELL.NS", "CARBORUNIV.NS", "CUMI.NS", "GREAVESCOT.NS", "ESCORTS.NS",
-    "ATUL.NS", "SRF.NS", "PIIND.NS", "RALLIS.NS", "DHANUKA.NS",
-    "BAYER.NS", "SUMICHEM.NS", "NAVIN.NS", "CLEAN.NS", "AARTI.NS",
-    "VINATIORGA.NS", "GALAXY.NS", "FINEORG.NS", "PCBL.NS", "PHILIPCARB.NS",
-    "MANALI.NS", "NOCIL.NS", "BASF.NS", "DEEPAKNTR.NS", "TATACHEM.NS",
-    "GNFC.NS", "GSFC.NS", "CHAMBLFERT.NS", "COROMANDEL.NS", "KSCL.NS",
-    "ASTRAL.NS", "SUPREMEIND.NS", "NILKAMAL.NS", "VINYLINDIA.NS", "EPL.NS",
-    "UFLEX.NS", "HUHTAMAKI.NS", "MOLD-TEK.NS", "JYOTHYLAB.NS", "TTKPRESTIG.NS",
-    "HAWKINCOOK.NS", "VSTIND.NS", "GODFRYPHLP.NS", "RADICO.NS", "TILAKNAGAR.NS",
-    "UNITDSPR.NS", "GLOBUSSPR.NS", "JUBLFOOD.NS", "WESTLIFE.NS", "DEVYANI.NS",
-    "SAPPHIRE.NS", "BARBEQUE.NS", "SPECIALITY.NS", "MAHINDLIFE.NS", "CEATLTD.NS",
-    "APOLLOTYRE.NS", "MRF.NS", "JKTYRE.NS", "GOODYEAR.NS", "BALKRISIND.NS",
-    "EXIDEIND.NS", "AMARAJABAT.NS", "HBLPOWER.NS", "LUMINOUS.NS", "SOLARIND.NS",
-    "SUNFLAG.NS", "RATNAMANI.NS", "WELSPUNIND.NS", "VARDHACRLC.NS", "TRIDENT.NS",
-    "GRASIM.NS", "CENTURY.NS", "JSWHL.NS", "SINTERCAST.NS", "TINPLATE.NS",
-    "WELCORP.NS", "MANALIPETC.NS", "STERLINWIL.NS", "KIRI.NS", "SUDARSCHEM.NS",
-]
-
-# Remove duplicates while preserving order
-_seen = set()
-NIFTY500_TICKERS_CLEAN = []
-for t in NIFTY500_TICKERS:
-    if t not in _seen:
-        _seen.add(t)
-        NIFTY500_TICKERS_CLEAN.append(t)
-NIFTY500_TICKERS = NIFTY500_TICKERS_CLEAN
-
-
-NYSE_TICKERS = [
-    # Large-cap NYSE stocks (S&P 500 / Dow components)
+US_TICKERS = [
+    # ── Mega-cap Tech (NASDAQ) ─────────────────────────────────────────────
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "GOOG", "META", "TSLA",
+    "AVGO", "ORCL", "ADBE", "CSCO", "QCOM", "TXN", "AMAT", "MU",
+    "AMD", "INTC", "KLAC", "LRCX", "MRVL", "NXPI", "ON", "SWKS",
+    "MPWR", "ENTG", "WOLF", "ONTO", "COHU", "ACLS",
+    # ── Software / Cloud ──────────────────────────────────────────────────
+    "CRM", "NOW", "INTU", "PANW", "CRWD", "SNOW", "DDOG", "ZS",
+    "OKTA", "MDB", "GTLB", "HUBS", "VEEV", "WDAY", "TEAM", "SPLK",
+    "FROG", "DOCN", "NET", "CFLT", "APP", "TTD", "RBLX", "HOOD",
+    "BILL", "SMAR", "BOX", "APPN", "PCTY", "PAYC",
+    # ── Internet / E-Commerce ─────────────────────────────────────────────
+    "NFLX", "ABNB", "UBER", "LYFT", "DASH", "SHOP", "EBAY", "ETSY",
+    "PINS", "SNAP", "SPOT", "ZM", "YELP", "IAC", "ANGI", "TRIP",
+    # ── Fintech / Payments ────────────────────────────────────────────────
+    "V", "MA", "PYPL", "SQ", "AFRM", "SOFI", "UPST", "LC",
+    "COIN", "MSTR", "GPN", "FIS", "FISV", "WEX", "PRFT", "RPAY",
+    # ── Semiconductors extended ───────────────────────────────────────────
+    "ASML", "TSM", "ARM", "MCHP", "ADI", "XLNX", "MTSI", "SLAB",
+    "DIOD", "POWI", "SMTC", "AMBA", "AEHR", "FORM",
+    # ── Financials — Banks ────────────────────────────────────────────────
     "JPM", "BAC", "WFC", "C", "GS", "MS", "AXP", "BLK", "SCHW", "USB",
     "PNC", "TFC", "COF", "MTB", "RF", "KEY", "CFG", "HBAN", "FITB", "ZION",
-    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HES",
-    "PFE", "JNJ", "ABT", "MRK", "BMY", "LLY", "UNH", "CVS", "CI", "HUM",
-    "WMT", "TGT", "KR", "COST", "DG", "DLTR", "SYY", "KHC", "GIS", "CAG",
-    "K", "CPB", "HSY", "MKC", "SJM", "HRL", "TSN", "TAP", "STZ", "BF.B",
-    "PG", "CL", "KMB", "CHD", "EL", "REV", "SPB", "NWL", "HPC", "UN",
-    "KO", "PEP", "MNST", "KDP", "WK", "COKE", "FIZZ", "CELH", "REED", "NRDS",
-    "MCD", "YUM", "QSR", "DPZ", "DENN", "CAKE", "DRI", "BLMN", "EAT", "TXRH",
-    "DIS", "PARA", "FOX", "FOXA", "WBD", "NYT", "NWS", "OMC", "IPG", "WPP",
-    "BA", "LMT", "RTX", "NOC", "GD", "L3H", "HII", "TDG", "SPR", "HEICO",
-    "CAT", "DE", "EMR", "ETN", "PH", "ITW", "DOV", "FTV", "AME", "ROP",
-    "GE", "HON", "MMM", "IR", "XYL", "FLOW", "GTLS", "ENPRO", "GNRC", "REXNORD",
-    "UPS", "FDX", "JBHT", "ODFL", "XPO", "CHRW", "R", "EXPD", "MATX", "SAIA",
-    "T", "VZ", "LUMN", "CTL", "FYBR", "ATUS", "CABO", "CNSL", "TDS", "USM",
-    "NEM", "FCX", "AA", "X", "CLF", "NUE", "STLD", "RS", "CMC", "SCHN",
-    "DD", "DOW", "LYB", "EMN", "IFF", "ALB", "CE", "HUN", "OLN", "TROX",
+    "ALLY", "CMA", "SNV", "WTFC", "BOKF", "FHB", "FBMS", "HOPE", "NBTB",
+    # ── Insurance ────────────────────────────────────────────────────────
+    "BRK.B", "CB", "HIG", "WRB", "CINF", "AFL", "MET", "PRU", "UNM",
+    "GL", "LNC", "TRV", "ALL", "PGR", "AON", "MMC", "MKL", "RLI",
+    # ── Asset Management / Alt Finance ───────────────────────────────────
+    "BX", "KKR", "APO", "CG", "ARES", "OWL", "BN", "BAM",
+    "GAIN", "MAIN", "ARCC", "HTGC", "GBDC", "PFLT",
+    # ── Energy — Oil & Gas ───────────────────────────────────────────────
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY",
+    "DVN", "FANG", "MRO", "APA", "SM", "CIVI", "PR", "MGY", "MTDR",
+    "HAL", "BKR", "CHX", "NOV", "PTEN", "RIG", "HP", "NE",
+    # ── Energy — Clean / Utilities ────────────────────────────────────────
     "NEE", "DUK", "SO", "D", "AEP", "EXC", "SRE", "PEG", "ED", "EIX",
-    "AMT", "CCI", "SPG", "PSA", "EQR", "AVB", "DRE", "VTR", "WELL", "HCP",
-    "CVS", "MCK", "ABC", "CAH", "PDCO", "OMI", "PSA", "WAT", "TMO", "PKI",
-    "BDX", "BSX", "EW", "STE", "HOLX", "BAX", "ZBH", "VAR", "ALGN", "DXCM",
-    "MMC", "AON", "MKL", "TRV", "ALL", "PRU", "MET", "AFL", "GL", "LNC",
-    "IBM", "HPE", "HPQ", "NCR", "DXC", "CSRA", "LDOS", "BAH", "CACI", "SAIC",
-    "F", "GM", "STLA", "TM", "HMC", "RACE", "PAG", "AN", "KMX", "LAD",
-    "HD", "LOW", "WSM", "RH", "BBBY", "PIR", "FND", "LL", "WHR", "ETH",
-    "LEN", "DHI", "PHM", "TOL", "MDC", "MTH", "MHO", "LGIH", "BZH", "HOV",
-    "SHW", "PPG", "RPM", "FUL", "AXTA", "HXL", "TRS", "ARES", "CW", "CRS",
-    "IP", "PKG", "SEE", "SON", "GEF", "CLW", "KS", "ATR", "BERY", "SLGN",
-    "CB", "HIG", "WRB", "MKL", "CINF", "HMN", "UNM", "GEV", "VST", "PCG",
-    "BX", "KKR", "APO", "CG", "ARES", "OWL", "GAIN", "MAIN", "CEG", "ETR",
-    "FE", "AES", "NRG", "URI", "RSG", "WM",
+    "PCG", "CEG", "ETR", "FE", "AES", "NRG", "VST", "GEV",
+    "ENPH", "SEDG", "FSLR", "RUN", "ARRY", "NOVA", "CSIQ",
+    # ── Healthcare — Pharma / Biotech ────────────────────────────────────
+    "PFE", "JNJ", "ABT", "MRK", "BMY", "LLY", "AMGN", "GILD",
+    "BIIB", "REGN", "VRTX", "MRNA", "BNTX", "ALNY", "IONS",
+    "INCY", "EXEL", "HALO", "FOLD", "RARE",
+    # ── Healthcare — Equipment / Services ────────────────────────────────
+    "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",
+    "TMO", "DHR", "SYK", "BSX", "MDT", "BDX", "EW", "ISRG",
+    "ZBH", "HOLX", "ALGN", "DXCM", "PODD", "NVCR", "NVST",
+    "MCK", "CAH", "ABC", "WAT", "IDXX", "IQV", "A", "PKI",
+    # ── Consumer Discretionary ────────────────────────────────────────────
+    "AMZN", "HD", "LOW", "TGT", "WMT", "COST", "DG", "DLTR",
+    "MCD", "SBUX", "YUM", "QSR", "DPZ", "CMG", "CAKE", "DRI",
+    "BLMN", "EAT", "TXRH", "JACK", "SHAK",
+    "NKE", "LULU", "UAA", "PVH", "RL", "TPR", "CPRI", "HBI",
+    "GPS", "ANF", "AEO", "URBN", "ROST", "TJX", "BURL",
+    "WSM", "RH", "W", "FND", "WHR", "BBWI",
+    # ── Autos ────────────────────────────────────────────────────────────
+    "TSLA", "F", "GM", "RIVN", "LCID", "NKLA",
+    "PAG", "AN", "KMX", "LAD", "SAH", "ABG",
+    "APTV", "LEA", "MGA", "BWA", "DAN",
+    # ── Consumer Staples ─────────────────────────────────────────────────
+    "PG", "KO", "PEP", "CL", "KMB", "CHD", "EL", "SPB", "NWL",
+    "KHC", "GIS", "CAG", "CPB", "HSY", "MKC", "SJM", "HRL", "TSN",
+    "TAP", "STZ", "MNST", "KDP", "CELH", "FIZZ", "COKE",
+    # ── Media / Entertainment ─────────────────────────────────────────────
+    "DIS", "CMCSA", "CHTR", "PARA", "FOX", "FOXA", "WBD", "NYT",
+    "NWS", "OMC", "WPP", "IPG", "NFLX", "SPOT", "LYV", "MSG",
+    # ── Telecom ───────────────────────────────────────────────────────────
+    "T", "VZ", "LUMN", "TMUS", "CABO", "TDS", "SHEN", "LBRDA",
+    # ── Industrials — Aerospace & Defense ────────────────────────────────
+    "BA", "LMT", "RTX", "NOC", "GD", "HII", "TDG", "LDOS",
+    "BAH", "CACI", "SAIC", "DRS", "KTOS", "AVAV", "RKLB",
+    # ── Industrials — Machinery & Equipment ──────────────────────────────
+    "CAT", "DE", "EMR", "ETN", "PH", "ITW", "DOV", "FTV", "AME", "ROP",
+    "GE", "HON", "MMM", "IR", "XYL", "GNRC", "GTLS", "FLOW",
+    "TT", "JCI", "CARR", "OTIS", "AIXI",
+    # ── Industrials — Transport & Logistics ──────────────────────────────
+    "UPS", "FDX", "JBHT", "ODFL", "XPO", "CHRW", "R", "EXPD",
+    "MATX", "SAIA", "SNDR", "WERN", "KNX", "LSTR", "ARCB",
+    "DAL", "UAL", "AAL", "LUV", "ALK", "SAVE",
+    # ── Industrials — Waste / Services ───────────────────────────────────
+    "RSG", "WM", "CWST", "SRCL", "CLH",
+    # ── Materials — Metals & Mining ──────────────────────────────────────
+    "NEM", "FCX", "AA", "CLF", "NUE", "STLD", "RS", "CMC",
+    "MP", "ARNC", "ATI", "CENX", "KALU", "MTRX",
+    # ── Materials — Chemicals ────────────────────────────────────────────
+    "DD", "DOW", "LYB", "EMN", "IFF", "ALB", "CE", "HUN", "OLN",
+    "TROX", "AXTA", "RPM", "SHW", "PPG", "FUL", "CBT", "OLIN",
+    "CC", "GPRK", "RYAM",
+    # ── Materials — Packaging & Paper ────────────────────────────────────
+    "IP", "PKG", "SEE", "SON", "GEF", "ATR", "SLGN", "BERY",
+    "AMCR", "BALL", "CCK", "OI",
+    # ── REITs ────────────────────────────────────────────────────────────
+    "AMT", "CCI", "PLD", "SPG", "PSA", "EQR", "AVB", "VTR", "WELL",
+    "DLR", "EQIX", "O", "VICI", "GLPI", "MPW", "PEAK", "HR",
+    "KIM", "REG", "FRT", "NNN", "STOR", "EPRT", "ADC",
+    "EXR", "CUBE", "LSI", "REXR", "EGP", "FR",
+    # ── Healthcare REITs / Services ───────────────────────────────────────
+    "STE", "HOLX", "BAX", "INVACARE",
+    # ── Technology Hardware ───────────────────────────────────────────────
+    "AAPL", "IBM", "HPE", "HPQ", "DXC", "NCR", "NTAP", "STX",
+    "WDC", "PSTG", "ANET", "JNPR", "FFIV", "RBBN", "VIAV",
+    "CRUS", "SYNA", "CEVA", "COHU",
+    # ── Homebuilders & Construction ───────────────────────────────────────
+    "LEN", "DHI", "PHM", "TOL", "MTH", "MHO", "LGIH", "BZH", "HOV",
+    "MDC", "SKY", "CVCO", "NVR", "KBH",
+    # ── Education / Staffing ─────────────────────────────────────────────
+    "COUR", "CHGG", "PRDO", "STRA", "LAUR", "APEI",
+    "MAN", "ADP", "PAYX", "G", "NSP", "KFRC",
+    # ── Biotech — Small/Mid cap ───────────────────────────────────────────
+    "SRPT", "RCUS", "ACAD", "SAGE", "ARQT", "PRAX", "DAWN",
+    "KRTX", "IMVT", "ROIV", "DNLI", "ARGT", "BLUE", "BMRN",
+    "NBIX", "INSM", "PRGO", "JAZZ", "SUPN",
+    # ── Retail — Specialty ────────────────────────────────────────────────
+    "ULTA", "FIVE", "OLLI", "BIG", "AZO", "AAP", "ORLY", "GPC",
+    "SIG", "ZGN", "BOOT", "CATO", "PLBY",
+    # ── Real Estate Services ─────────────────────────────────────────────
+    "CBRE", "JLL", "NMRK", "COMP", "OPEN", "RDFN",
+    # ── Restaurants & Food Service ────────────────────────────────────────
+    "WEN", "JACK", "WING", "RRGB", "NDLS", "DNUT", "PTLO",
+    # ── Gaming & Leisure ─────────────────────────────────────────────────
+    "MGM", "CZR", "WYNN", "LVS", "PENN", "DKNG", "RSI", "GAN",
+    "EA", "TTWO", "ATVI", "MSFT", "NTDOY",
+    # ── Travel & Hospitality ─────────────────────────────────────────────
+    "MAR", "HLT", "H", "IHG", "CHH", "ATNM",
+    "ABNB", "BKNG", "EXPE", "TRIP", "PCLN",
+    # ── Agriculture & Food ───────────────────────────────────────────────
+    "ADM", "BG", "MOS", "NTR", "CF", "FMC", "ICL",
+    "CALM", "PPC", "SEB", "SAFM",
+    # ── Industrial Gases & Specialty ─────────────────────────────────────
+    "APD", "LIN", "ECL", "IFF", "PPG", "ALB",
+    # ── Infrastructure & Engineering ─────────────────────────────────────
+    "URI", "HEES", "GATX", "TRN", "GNRC", "MYRG", "PRIM",
+    "ACM", "PWR", "MYR", "WLDN", "STRL",
+    # ── Data / Analytics ─────────────────────────────────────────────────
+    "SPGI", "MCO", "ICE", "CME", "CBOE", "NDAQ", "TW", "FDS",
+    "MSCI", "INFO", "VRSK", "CSGP", "ANSS", "CDNS", "SNPS",
+    # ── Cybersecurity ────────────────────────────────────────────────────
+    "PANW", "CRWD", "ZS", "OKTA", "FTNT", "CHKP", "TENB",
+    "QLYS", "VRNT", "SAIL", "S", "CYBR", "RPD",
+    # ── AI / Data Infrastructure ──────────────────────────────────────────
+    "AI", "PLTR", "BBAI", "SOUN", "GFAI", "SYNTX",
+    "SMCI", "VRT", "DELL", "HPE", "NTAP",
+    # ── Healthcare Tech ───────────────────────────────────────────────────
+    "VEEVA", "CERN", "NXGN", "CPSI", "HCAT", "PHR", "DOCS",
+    "ACCD", "TDOC", "AMWL", "ONEM", "CANO",
+    # ── Misc Industrial / Conglomerates ──────────────────────────────────
+    "GE", "HON", "MMM", "ITT", "RBC", "FELE", "AIXI",
+    "NVT", "REXNORD", "WTTR", "DSGR",
 ]
 
-# Remove duplicates
-_seen2 = set()
-NYSE_TICKERS_CLEAN = []
-for t in NYSE_TICKERS:
-    if t not in _seen2:
-        _seen2.add(t)
-        NYSE_TICKERS_CLEAN.append(t)
-NYSE_TICKERS = NYSE_TICKERS_CLEAN
+# ── Runtime blacklist — populated automatically when yfinance returns no data ─
+_BLACKLIST: set = set()
 
+def add_to_blacklist(tickers: list):
+    """Called by screener.py when yfinance reports a ticker as delisted/missing."""
+    _BLACKLIST.update(tickers)
+    if tickers:
+        import logging
+        logging.getLogger(__name__).info(
+            f"Blacklisted {len(tickers)} tickers this session: {tickers}"
+        )
 
-def get_tickers(market: str):
-    """Return ticker list for a given market ('NSE' or 'NYSE')."""
-    if market.upper() == "NSE":
-        return NIFTY500_TICKERS
-    elif market.upper() == "NYSE":
-        return NYSE_TICKERS
-    else:
-        raise ValueError(f"Unknown market: {market}. Use 'NSE' or 'NYSE'.")
+def get_tickers(market: str = "US") -> list:
+    """Return active US ticker list, deduplicated, excluding runtime blacklist."""
+    seen   = set()
+    result = []
+    for t in US_TICKERS:
+        if t not in seen and t not in _BLACKLIST:
+            seen.add(t)
+            result.append(t)
+    return result

@@ -6,21 +6,87 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
-from tickers import get_tickers
+from tickers import get_tickers, add_to_blacklist
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
 # ── Configurable constants ────────────────────────────────────────────────────
-PE_MAX            = 25.0
-VOLUME_SPIKE_MIN  = 1.5   # must be > 1.5× 20-day avg volume
-RSI_MIN           = 45.0
+PE_MAX            = 25.0   # raised from 20 → catches more stocks; still value-focused
+VOLUME_SPIKE_MIN  = 1.5    # lowered from 2.0 → 1.5× avg is still notable activity
+RSI_MIN           = 45.0   # lowered from 50 → includes stocks approaching momentum
 RSI_PERIOD        = 14
 TOP_N             = 10
-BATCH_SIZE        = 20    # tickers per yfinance bulk download
-BATCH_SLEEP       = 1.2   # seconds between batches (rate-limit safety)
-HISTORY_DAYS      = "45d" # enough for 20-day vol avg + 14-day RSI warmup
+BATCH_SIZE        = 20     # tickers per yfinance bulk download
+BATCH_SLEEP       = 1.2    # seconds between batches (rate-limit safety)
+HISTORY_DAYS      = "45d"  # enough for 20-day vol avg + 14-day RSI warmup
+# NOTE: On weekends/holidays yfinance returns the last trading day's data.
+# Volume spikes are naturally low on those days — this is expected behaviour.
+# For best results run during or just after market hours on a weekday.
+
+# ── Momentum burst detection (MU-style move) ──────────────────────────────────
+MOMENTUM_PRICE_SURGE_MIN  = 5.0   # % single-day price jump (MU was ~19%)
+MOMENTUM_VOL_MULTIPLIER   = 2.0   # volume must be ≥ 2× 20-day avg on the surge day
+MOMENTUM_RSI_MIN          = 55.0  # RSI must confirm buying pressure
+MOMENTUM_TOP_N            = 10    # max momentum stocks to surface
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+
+def compute_day_change_pct(df) -> float:
+    """Return today price change % vs previous close."""
+    if len(df) < 2:
+        return 0.0
+    prev_close = float(df["Close"].iloc[-2])
+    curr_close = float(df["Close"].iloc[-1])
+    if prev_close <= 0:
+        return 0.0
+    return round((curr_close - prev_close) / prev_close * 100, 2)
+
+
+def detect_momentum_bursts(history: dict) -> list:
+    """
+    Identify MU-style momentum burst stocks:
+      - Single-day price surge >= MOMENTUM_PRICE_SURGE_MIN %
+      - Volume on surge day >= MOMENTUM_VOL_MULTIPLIER x 20-day avg
+      - RSI >= MOMENTUM_RSI_MIN (confirms buying conviction)
+    Returns list of dicts sorted by momentum_score descending.
+    """
+    bursts = []
+    for ticker, df in history.items():
+        if len(df) < 22:
+            continue
+        day_change = compute_day_change_pct(df)
+        if day_change < MOMENTUM_PRICE_SURGE_MIN:
+            continue
+        avg_vol    = df["Volume"].iloc[-21:-1].mean()
+        latest_vol = float(df["Volume"].iloc[-1])
+        vol_ratio  = round(latest_vol / avg_vol, 2) if avg_vol > 0 else 0
+        if vol_ratio < MOMENTUM_VOL_MULTIPLIER:
+            continue
+        rsi = compute_rsi(df["Close"])
+        if np.isnan(rsi) or rsi < MOMENTUM_RSI_MIN:
+            continue
+        curr_price     = round(float(df["Close"].iloc[-1]), 2)
+        prev_price     = round(float(df["Close"].iloc[-2]), 2)
+        surge_score    = min(1.0, day_change / 20.0)
+        vol_score      = min(1.0, (vol_ratio - 2.0) / 8.0)
+        rsi_score      = (rsi - MOMENTUM_RSI_MIN) / (100.0 - MOMENTUM_RSI_MIN)
+        momentum_score = round((surge_score * 0.5 + vol_score * 0.3 + rsi_score * 0.2), 4)
+        bursts.append({
+            "ticker":         ticker,
+            "price":          curr_price,
+            "prev_price":     prev_price,
+            "day_change_pct": day_change,
+            "vol_ratio":      vol_ratio,
+            "rsi":            rsi,
+            "momentum_score": momentum_score,
+        })
+    bursts.sort(key=lambda x: x["momentum_score"], reverse=True)
+    for i, b in enumerate(bursts[:MOMENTUM_TOP_N]):
+        b["rank"] = i + 1
+    log.info(f"Momentum bursts: {len(bursts)} found, returning top {min(len(bursts), MOMENTUM_TOP_N)}")
+    return bursts[:MOMENTUM_TOP_N]
 
 
 def compute_rsi(close: pd.Series, period: int = RSI_PERIOD) -> float:
@@ -82,17 +148,26 @@ def fetch_bulk_history(tickers: list[str], progress_cb=None) -> dict:
             continue
 
         if isinstance(raw.columns, pd.MultiIndex):
+            failed_in_batch = []
             for ticker in batch:
                 try:
                     df = raw[ticker].dropna()
                     if not df.empty:
                         result[ticker] = df
+                    else:
+                        failed_in_batch.append(ticker)
                 except KeyError:
-                    pass
+                    failed_in_batch.append(ticker)
+            if failed_in_batch:
+                log.warning(f"No data for {failed_in_batch} — adding to session blacklist")
+                add_to_blacklist(failed_in_batch)
         else:
             # Single ticker returned flat
             if len(batch) == 1 and not raw.empty:
                 result[batch[0]] = raw.dropna()
+            elif len(batch) == 1:
+                log.warning(f"No data for {batch} — adding to session blacklist")
+                add_to_blacklist(batch)
 
         if progress_cb:
             progress_cb(min(100, int((i + BATCH_SIZE) / len(tickers) * 60)))
@@ -145,8 +220,8 @@ def run_screen(market: str, progress_cb=None) -> dict:
         'timestamp': str,
     }
     """
-    tickers = get_tickers(market)
-    log.info(f"Starting screen for {market} — {len(tickers)} tickers")
+    tickers = get_tickers("US")
+    log.info(f"Starting US screen — {len(tickers)} tickers")
 
     if progress_cb:
         progress_cb(2)
@@ -217,12 +292,19 @@ def run_screen(market: str, progress_cb=None) -> dict:
     log.info(f"Screen complete — {len(qualified)} passed all filters, returning top {len(top)}")
 
     if progress_cb:
+        progress_cb(98)
+
+    # Step 6: Detect momentum bursts (MU-style moves) from full history
+    momentum = detect_momentum_bursts(history)
+
+    if progress_cb:
         progress_cb(100)
 
     return {
-        "results":       top,
-        "scanned":       len(history),
-        "passed_filter": len(qualified),
-        "market":        market.upper(),
-        "timestamp":     datetime.now(timezone.utc).isoformat(),
+        "results":        top,
+        "momentum":       momentum,
+        "scanned":        len(history),
+        "passed_filter":  len(qualified),
+        "market":         market.upper(),
+        "timestamp":      datetime.now(timezone.utc).isoformat(),
     }

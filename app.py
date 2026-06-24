@@ -1,31 +1,25 @@
-# app.py — Flask backend for Stock Screener
+# app.py — Flask backend for Stock Screener (US-only)
 
 import threading
 import time
 import logging
 from flask import Flask, jsonify, render_template, request
 from screener import run_screen
-from alerts import start_scheduler, stop_scheduler
 
 log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# ── Alert scheduler ───────────────────────────────────────────────────────────
-_scheduler = None
-
-# ── In-memory scan state (one scan at a time) ─────────────────────────────────
-_scan_lock   = threading.Lock()
-_scan_state  = {
-    "running":   False,
-    "progress":  0,
-    "market":    None,
-    "result":    None,   # last completed result
-    "error":     None,
+# ── In-memory scan state ──────────────────────────────────────────────────────
+_scan_lock  = threading.Lock()
+_scan_state = {
+    "running":  False,
+    "progress": 0,
+    "result":   None,
+    "error":    None,
 }
-# Cache: avoid re-scanning within 55 seconds of the last scan for the same market
-_cache       = {}   # market -> {result, completed_at}
-CACHE_TTL    = 55   # seconds
+_cache    = {"result": None, "completed_at": 0}
+CACHE_TTL = 55   # seconds — set to 0 to disable during testing
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -33,25 +27,25 @@ def _set_progress(pct: int):
     _scan_state["progress"] = pct
 
 
-def _run_scan_thread(market: str):
+def _run_scan_thread():
     with _scan_lock:
         _scan_state["running"]  = True
         _scan_state["progress"] = 0
         _scan_state["error"]    = None
-        _scan_state["market"]   = market
 
     try:
-        result = run_screen(market, progress_cb=_set_progress)
+        result = run_screen("US", progress_cb=_set_progress)
         with _scan_lock:
-            _scan_state["result"]  = result
-            _scan_state["running"] = False
+            _scan_state["result"]   = result
+            _scan_state["running"]  = False
             _scan_state["progress"] = 100
-            _cache[market] = {"result": result, "completed_at": time.time()}
+            _cache["result"]        = result
+            _cache["completed_at"]  = time.time()
     except Exception as e:
-        log.exception(f"Scan failed for {market}: {e}")
+        log.exception(f"Scan failed: {e}")
         with _scan_lock:
-            _scan_state["running"] = False
-            _scan_state["error"]   = str(e)
+            _scan_state["running"]  = False
+            _scan_state["error"]    = str(e)
             _scan_state["progress"] = 0
 
 
@@ -64,40 +58,28 @@ def index():
 
 @app.route("/api/scan")
 def api_scan():
-    market = request.args.get("market", "NSE").upper()
     force = request.args.get("force", "false").lower() == "true"
-    
-    if market not in ("NSE", "NYSE"):
-        return jsonify({"error": "market must be NSE or NYSE"}), 400
 
-    # Return cached result if fresh and not forced
-    if not force:
-        cached = _cache.get(market)
-        if cached and (time.time() - cached["completed_at"]) < CACHE_TTL:
-            log.info(f"Returning cached result for {market}")
-            return jsonify({"cached": True, **cached["result"]})
+    # Return cached result if fresh
+    age = time.time() - _cache["completed_at"]
+    if not force and _cache["result"] and age < CACHE_TTL:
+        log.info(f"Returning cached result (age: {age:.0f}s)")
+        return jsonify({"cached": True, "cache_age_seconds": int(age), **_cache["result"]})
 
-    # If already scanning the same market, return status
+    # If scan already running, return progress
     with _scan_lock:
-        if _scan_state["running"] and _scan_state["market"] == market:
+        if _scan_state["running"]:
             return jsonify({
                 "scanning": True,
                 "progress": _scan_state["progress"],
-                "market":   market,
+                "market":   "US",
             }), 202
 
-        if _scan_state["running"]:
-            return jsonify({"error": "A scan is already in progress for another market. Please wait."}), 429
-
     # Kick off background scan
-    t = threading.Thread(target=_run_scan_thread, args=(market,), daemon=True)
+    t = threading.Thread(target=_run_scan_thread, daemon=True)
     t.start()
 
-    return jsonify({
-        "scanning": True,
-        "progress": 0,
-        "market":   market,
-    }), 202
+    return jsonify({"scanning": True, "progress": 0, "market": "US"}), 202
 
 
 @app.route("/api/status")
@@ -112,33 +94,18 @@ def api_status():
         return jsonify({
             "status":   "scanning",
             "progress": state["progress"],
-            "market":   state["market"],
+            "market":   "US",
         })
 
     if state["result"]:
-        return jsonify({
-            "status":   "ready",
-            "progress": 100,
-            **state["result"],
-        })
+        return jsonify({"status": "ready", "progress": 100, **state["result"]})
 
     return jsonify({"status": "idle"})
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  Stock Screener  →  http://localhost:5000")
+    print("  US Stock Screener  →  http://localhost:5000")
+    print("  Universe: ~700 stocks (S&P500 + Nasdaq + Russell mid-caps)")
     print("=" * 60)
-
-    # Start alert scheduler
-    try:
-        _scheduler = start_scheduler()
-    except Exception as e:
-        log.error(f"Failed to start alert scheduler: {e}")
-
-    try:
-        app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
-    finally:
-        # Graceful shutdown
-        if _scheduler:
-            stop_scheduler(_scheduler)
+    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
